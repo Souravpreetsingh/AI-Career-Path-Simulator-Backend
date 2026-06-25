@@ -5,10 +5,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 
 import { AuthController } from './auth.controller';
-import { GoogleController } from './google.controller';
 import { AuthService } from './auth.service';
 import { User, UserSchema } from './schemas/user.schema';
-import { JwtStrategy, GoogleStrategy, JwtRefreshStrategy } from './strategies';
+import { JwtStrategy, JwtRefreshStrategy } from './strategies';
 import { TokenBlacklistService } from './utils/token-blacklist';
 
 @Module({
@@ -26,11 +25,10 @@ import { TokenBlacklistService } from './utils/token-blacklist';
       }),
     }),
   ],
-  controllers: [AuthController, GoogleController],
+  controllers: [AuthController],
   providers: [
     AuthService,
     JwtStrategy,
-    GoogleStrategy,
     JwtRefreshStrategy,
     TokenBlacklistService,
   ],

@@ -11,8 +11,13 @@ export class AiService {
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
-      this.logger.log('OpenAI client initialized');
+      const isOpenRouter = apiKey.startsWith('sk-or-v1-');
+      this.openai = new OpenAI({
+        apiKey,
+        baseURL: isOpenRouter ? 'https://openrouter.ai/api/v1' : undefined,
+        defaultHeaders: isOpenRouter ? { 'X-Title': 'AI Career Path Simulator' } : undefined,
+      });
+      this.logger.log(`${isOpenRouter ? 'OpenRouter' : 'OpenAI'} client initialized`);
     } else {
       this.logger.warn('OPENAI_API_KEY not set — using mock responses');
     }

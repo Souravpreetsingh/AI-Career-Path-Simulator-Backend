@@ -264,6 +264,22 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
+  async guest() {
+    const guestId = uuidv4();
+    const user = await this.userModel.create({
+      fullName: 'Guest User',
+      email: `guest-${guestId}@careerpath.ai`,
+      role: UserRole.STUDENT,
+      provider: 'guest',
+    });
+    const accessToken = this.generateAccessToken(user);
+    return {
+      user: this.sanitizeUser(user),
+      accessToken,
+      refreshToken: accessToken,
+    };
+  }
+
   sanitizeUser(user: UserDocument) {
     const obj = user.toObject();
     delete obj.password;

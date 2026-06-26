@@ -29,6 +29,13 @@ export class AuthController {
     return ApiResponse.success(result, 'Login successful');
   }
 
+  @Post('guest')
+  @ApiOperation({ summary: 'Create anonymous guest session' })
+  async guest() {
+    const result = await this.authService.guest();
+    return ApiResponse.success(result, 'Guest session created');
+  }
+
   @Post('google')
   @ApiOperation({ summary: 'Login or signup with Google credentials' })
   async googleLogin(@Body() dto: GoogleLoginDto) {

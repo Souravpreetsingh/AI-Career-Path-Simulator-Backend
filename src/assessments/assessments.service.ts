@@ -67,8 +67,9 @@ export class AssessmentsService {
       .find({ userId })
       .sort({ completedAt: -1 });
 
-    if (!assessments.length)
-      throw new NotFoundException('No assessments found for this user');
+    if (!assessments.length) {
+      return { assessments: [], latest: null, recommended: null };
+    }
 
     const latest = assessments[0];
     const recommended = getRecommendedCareer(latest.matchPercentages || {});

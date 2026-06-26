@@ -3,7 +3,7 @@ import { Document, Types } from 'mongoose';
 import { UserRole } from '../../common/utils/roles.enum';
 
 export type UserDocument = User & Document;
-export type AuthProvider = 'email' | 'google';
+export type AuthProvider = 'email' | 'google' | 'guest';
 
 @Schema({ timestamps: true })
 export class User {
@@ -39,7 +39,7 @@ export class User {
   @Prop({ index: true })
   googleId?: string;
 
-  @Prop({ required: true, enum: ['email', 'google'], default: 'email' })
+  @Prop({ required: true, enum: ['email', 'google', 'guest'], default: 'email' })
   provider: AuthProvider;
 
   @Prop({ select: false })

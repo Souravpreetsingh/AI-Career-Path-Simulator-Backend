@@ -157,6 +157,14 @@ export class AuthService {
     };
   }
 
+  async validateToken(token: string): Promise<JwtPayload> {
+    try {
+      return this.jwtService.verify<JwtPayload>(token);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+  }
+
   async refreshToken(dto: RefreshTokenDto) {
     if (this.tokenBlacklistService.isBlacklisted(dto.refreshToken)) {
       throw new UnauthorizedException('Token has been revoked');

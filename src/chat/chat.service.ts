@@ -3,12 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Chat, ChatDocument, ChatMessage } from './schemas/chat.schema';
 import { SendMessageDto } from './dto/send-message.dto';
-import { getMockResponse, SUGGESTED_PROMPTS } from './utils/mock-responses';
+import { SUGGESTED_PROMPTS } from './utils/mock-responses';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
+    private readonly aiService: AiService,
   ) {}
 
   async sendMessage(userId: string, dto: SendMessageDto) {
@@ -33,7 +35,7 @@ export class ChatService {
     };
     chat.messages.push(userMessage);
 
-    const aiResponse = getMockResponse(dto.message);
+    const aiResponse = await this.aiService.generateChatResponse(dto.message);
 
     const assistantMessage: ChatMessage = {
       role: 'assistant',
@@ -52,7 +54,10 @@ export class ChatService {
     };
   }
 
-  async getHistory(userId: string) {
+  async getHistory(userId: string, chatId?: string) {
+    if (chatId) {
+      return this.getChatById(chatId, userId);
+    }
     return this.chatModel
       .find({ userId })
       .select('title createdAt updatedAt')

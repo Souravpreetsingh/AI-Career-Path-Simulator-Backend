@@ -20,6 +20,13 @@ export class CareersController {
     return ApiResponse.paginated(result.items, result.total, result.page, result.limit);
   }
 
+  @Get('by-title/:title')
+  @ApiOperation({ summary: 'Get career by title (exact match)' })
+  async findByTitle(@Param('title') title: string) {
+    const career = await this.careersService.findByTitle(title);
+    return ApiResponse.success(career);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get career by ID' })
   async findById(@Param('id') id: string) {

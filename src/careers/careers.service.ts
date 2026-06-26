@@ -22,6 +22,12 @@ export class CareersService {
     });
   }
 
+  async findByTitle(title: string) {
+    const career = await this.careerModel.findOne({ title: { $regex: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } });
+    if (!career) throw new NotFoundException('Career not found');
+    return career;
+  }
+
   async findById(id: string) {
     const career = await this.careerModel.findById(id);
     if (!career) throw new NotFoundException('Career not found');

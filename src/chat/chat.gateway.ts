@@ -61,7 +61,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const userId = client.data.userId;
       if (!userId) throw new WsException('Unauthorized');
 
+      this.server.to(`user:${userId}`).emit('aiTyping', { isTyping: true, chatId: payload.chatId });
+
       const result = await this.chatService.sendMessage(userId, { message: payload.message, chatId: payload.chatId });
+
+      this.server.to(`user:${userId}`).emit('aiTyping', { isTyping: false, chatId: result.chatId });
       this.server.to(`user:${userId}`).emit('newMessage', result);
       return result;
     } catch (error) {

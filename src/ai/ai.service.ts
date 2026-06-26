@@ -1,48 +1,64 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
 import { getMockResponse } from '../chat/utils/mock-responses';
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private openai: OpenAI | null = null;
+  private apiKey: string | null = null;
+  private baseUrl: string = 'https://api.openai.com/v1';
+  private model: string = 'gpt-4o-mini';
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (apiKey) {
-      const isOpenRouter = apiKey.startsWith('sk-or-v1-');
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: isOpenRouter ? 'https://openrouter.ai/api/v1' : undefined,
-        defaultHeaders: isOpenRouter ? { 'X-Title': 'AI Career Path Simulator' } : undefined,
-      });
-      this.logger.log(`${isOpenRouter ? 'OpenRouter' : 'OpenAI'} client initialized`);
+    this.apiKey = this.configService.get<string>('OPENAI_API_KEY') || null;
+    if (this.apiKey) {
+      if (this.apiKey.startsWith('sk-or-v1-')) {
+        this.baseUrl = 'https://openrouter.ai/api/v1';
+        this.model = 'openai/gpt-4o-mini';
+        this.logger.log('OpenRouter client initialized');
+      } else {
+        this.logger.log('OpenAI client initialized');
+      }
     } else {
       this.logger.warn('OPENAI_API_KEY not set — using mock responses');
     }
   }
 
   async generateChatResponse(message: string, context?: { career?: string; interests?: string[] }): Promise<string> {
-    if (this.openai) {
-      try {
-        const systemPrompt = this.buildSystemPrompt(context);
-        const completion = await this.openai.chat.completions.create({
-          model: 'gpt-4o-mini',
+    if (!this.apiKey) return getMockResponse(message);
+
+    try {
+      const systemPrompt = this.buildSystemPrompt(context);
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          ...(this.baseUrl.includes('openrouter') ? { 'X-Title': 'AI Career Path Simulator' } : {}),
+        },
+        body: JSON.stringify({
+          model: this.model,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: message },
           ],
           max_tokens: 500,
           temperature: 0.7,
-        });
-        return completion.choices[0]?.message?.content || 'I could not generate a response. Please try again.';
-      } catch (error) {
-        this.logger.error(`OpenAI API error: ${error.message}`);
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        this.logger.error(`API error ${response.status}: ${errText}`);
         return 'I apologize, but I encountered an error processing your request. Please try again later.';
       }
+
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || 'I could not generate a response. Please try again.';
+    } catch (error) {
+      this.logger.error(`API error: ${error.message}`);
+      return 'I apologize, but I encountered an error processing your request. Please try again later.';
     }
-    return getMockResponse(message);
   }
 
   private buildSystemPrompt(context?: { career?: string; interests?: string[] }): string {
